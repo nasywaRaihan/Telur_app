@@ -33,7 +33,6 @@ async function tambahOrder() {
   });
 
   const result = await res.json();
-
   console.log('RESP:', result);
 
   if (!res.ok) {
@@ -44,7 +43,10 @@ async function tambahOrder() {
   document.getElementById('nama').value = '';
   document.getElementById('jumlah').value = '';
 
-  init();
+  // 🔥 FIX DISINI
+  setTimeout(() => {
+    init();
+  }, 300);
 }
 
 // PRODUKSI
