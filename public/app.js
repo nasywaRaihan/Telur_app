@@ -44,9 +44,8 @@ async function tambahOrder() {
   document.getElementById('jumlah').value = '';
 
   // 🔥 FIX DISINI
-  setTimeout(() => {
-    init();
-  }, 300);
+  await loadOrders();
+  await loadDashboard();
 }
 
 // PRODUKSI
@@ -97,7 +96,7 @@ async function loadDashboard() {
 
   document.getElementById('uang').innerText = formatRupiah(data.uang || 0);
 
-  document.getElementById('pending').innerText = Math.ceil(data.pendingKg || 0);
+  document.getElementById('pending').innerText = data.pending || 0;
 }
 
 // HARGA
@@ -151,7 +150,7 @@ function renderOrders(data) {
         <div class="order-left">
           <b>${index + 1}. ${o.nama}</b><br>
 
-          📅 ${new Date(o.tanggal).toLocaleString()}<br>
+          📅 ${new Date(o.tanggal).toLocaleDateString('id-ID')}<br>
 
           ${o.jumlah_pesan} kg<br>
 

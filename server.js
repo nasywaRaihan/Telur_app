@@ -116,15 +116,19 @@ app.get('/dashboard', async (req, res) => {
   const terjual = penjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
 
   const { data: orders } = await supabase.from('orders').select('jumlah_pesan, status_order');
-  const pendingKg = orders?.filter((o) => o.status_order !== 'selesai').reduce((s, o) => s + o.jumlah_pesan, 0) || 0;
 
   const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
 
   const harga = hargaRow?.harga_per_kg || 0;
 
+  const pendingKg = orders?.filter((o) => o.status_order !== 'selesai').reduce((s, o) => s + o.jumlah_pesan, 0) || 0;
+
+  const pending = orders?.filter((o) => o.status_order === 'menunggu').length || 0;
+
   res.send({
     stok: stokAsli - terjual,
-    pendingKg,
+    pendingKg, // 🔴 kg (buat tulisan merah)
+    pending, // 🟡 jumlah orang (buat card)
     uang: terjual * harga,
   });
 });

@@ -57,6 +57,35 @@
         transform: translateY(-4px);
       }
 
+      /* INFO CARD (dashboard) */
+      .card-info {
+        background: linear-gradient(135deg, #fff7cc, #fff1a8);
+        border: 1px solid #ffe066;
+      }
+
+      .card-input-info {
+        background: linear-gradient(135deg, #d3b300, #998319);
+        border: 1px solid #ffe066;
+      }
+
+      /* INPUT CARD */
+      .card-input {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+      }
+
+      .card-info h3 {
+        color: #b8860b;
+      }
+
+      .card-input h3 {
+        color: #333;
+      }
+
+      .card-input-info h3 {
+        color: #ffffff;
+      }
+
       /* INPUT */
       input {
         width: 100%;
@@ -108,7 +137,7 @@
         list-style: none;
         background: rgba(250, 213, 121, 0.096);
         margin-top: 10px;
-        padding: 14px;
+        padding: 10px;
         border-radius: 10px;
         animation: fadeIn 0.3s ease;
         border-left: 4px solid #ffb800;
@@ -132,6 +161,33 @@
       .done b {
         text-decoration: line-through;
         color: #888;
+      }
+
+      /* LIST WRAPPER */
+      #list {
+        padding: 0;
+        margin: 0;
+      }
+
+      /* ITEM */
+      #list li {
+        padding: 10px 12px;
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      #list li {
+        transition: 0.2s;
+      }
+
+      #list li:hover {
+        background: #fff3c4;
+      }
+
+      /* KHUSUS CARD LIST */
+      .card.list-order {
+        padding-left: 12px;
+        padding-right: 12px;
       }
 
       /* STATUS */
@@ -228,7 +284,7 @@
 
     <!-- HARGA -->
     <div class="container">
-      <div class="card">
+      <div class="card card-info">
         <h3>💰 Harga Telur</h3>
         <p id="hargaDisplay">Memuat harga...</p>
       </div>
@@ -237,23 +293,23 @@
     <!-- DASHBOARD -->
     <div class="container">
       <div class="grid dashboard">
-        <div class="card">
+        <div class="card card-info">
           <h3>🥚 Stok Telor</h3>
           <h2 id="stok" style="font-size: 28px">0 kg</h2>
           <p id="stokInfo" style="font-size: 14px; color: #ff6b6b; margin-top: 5px"></p>
         </div>
 
-        <div class="card">
+        <div class="card card-info">
           <div style="display: flex; justify-content: space-between; align-items: center">
             <h3>💰 Jumlah Uang</h3>
             <button onclick="resetUang()" style="width: auto; padding: 5px 10px; font-size: 12px; background: #f44336">Reset</button>
           </div>
 
           <!-- 🔥 INI YANG KURANG -->
-          <h2 id="uang" style="color: #ffd700; font-size: 28px; margin-top: 10px">Rp 0</h2>
+          <h2 id="uang" style="color: #000000; font-size: 28px; margin-top: 10px">Rp 0</h2>
         </div>
 
-        <div class="card">
+        <div class="card card-info">
           <h3>📦 Pending</h3>
           <h2 id="pending">0</h2>
         </div>
@@ -263,13 +319,13 @@
     <!-- PRODUKSI + HARGA -->
     <div class="container">
       <div class="grid">
-        <div class="card">
+        <div class="card card-input-info">
           <h3>🥚 Produksi</h3>
           <input id="produksi" type="number" placeholder="Jumlah telur (kg)" />
           <button onclick="tambahProduksi()">Simpan</button>
         </div>
 
-        <div class="card">
+        <div class="card card-input-info">
           <h3>💰 Update Harga</h3>
           <input id="harga" type="number" placeholder="Harga per kg" />
           <button onclick="updateHarga()">Simpan Harga</button>
@@ -286,7 +342,7 @@
         <button onclick="tambahOrder()">Tambah</button>
       </div>
 
-      <div class="card" style="margin-top: 15px">
+      <div class="card list-order" style="margin-top: 15px">
         <h3>📋 Daftar Pesanan</h3>
 
         <input id="search" placeholder="🔍 Cari nama..." oninput="filterOrders()" />
