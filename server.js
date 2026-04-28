@@ -4,11 +4,15 @@ const supabase = require('./supabase');
 
 const app = express();
 
+// ✅ middleware (cukup sekali)
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+// ===============================
+// ERROR HANDLER
+// ===============================
 process.on('uncaughtException', (err) => {
   console.error('❌ UNCAUGHT ERROR:', err);
 });
@@ -16,10 +20,6 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (err) => {
   console.error('❌ UNHANDLED PROMISE:', err);
 });
-
-const app = express();
-app.use(cors());
-app.use(express.static('public'));
 
 // ===============================
 // 📦 TAMBAH ORDER
@@ -55,19 +55,17 @@ app.get('/orders', async (req, res) => {
 });
 
 // ===============================
-// 💰 BAYAR (SELESAI)
+// 💰 BAYAR
 // ===============================
 app.patch('/orders/:id/bayar', async (req, res) => {
   const { id } = req.params;
 
-  // ambil order
   const { data: order, error: err1 } = await supabase.from('orders').select('*').eq('id', id).single();
 
   if (err1 || !order) {
     return res.status(404).send({ error: 'Order tidak ditemukan' });
   }
 
-  // simpan ke penjualan
   await supabase.from('penjualan').insert([
     {
       jumlah: order.jumlah_pesan,
@@ -75,7 +73,6 @@ app.patch('/orders/:id/bayar', async (req, res) => {
     },
   ]);
 
-  // update order
   const { error } = await supabase
     .from('orders')
     .update({
@@ -87,38 +84,11 @@ app.patch('/orders/:id/bayar', async (req, res) => {
 
   if (error) return res.status(500).send(error);
 
-  res.send({ message: 'Sudah dibayar & tercatat' });
+  res.send({ message: 'Sudah dibayar' });
 });
 
 // ===============================
-// ✏️ EDIT ORDER
-// ===============================
-app.patch('/orders/:id', async (req, res) => {
-  const { id } = req.params;
-  const { jumlah } = req.body;
-
-  const { error } = await supabase.from('orders').update({ jumlah_pesan: jumlah }).eq('id', id);
-
-  if (error) return res.status(500).send(error);
-
-  res.send({ message: 'Order diupdate' });
-});
-
-// ===============================
-// 🗑️ HAPUS ORDER
-// ===============================
-app.delete('/orders/:id', async (req, res) => {
-  const { id } = req.params;
-
-  const { error } = await supabase.from('orders').delete().eq('id', id);
-
-  if (error) return res.status(500).send(error);
-
-  res.send({ message: 'Order dihapus' });
-});
-
-// ===============================
-// 🥚 PRODUKSI
+// PRODUKSI
 // ===============================
 app.post('/produksi', async (req, res) => {
   const { jumlah } = req.body;
@@ -136,87 +106,44 @@ app.post('/produksi', async (req, res) => {
 });
 
 // ===============================
-// 📊 DASHBOARD
+// DASHBOARD
 // ===============================
 app.get('/dashboard', async (req, res) => {
-  // produksi
   const { data: produksi } = await supabase.from('produksi').select('jumlah_telur');
+  const stokAsli = produksi?.reduce((s, p) => s + p.jumlah_telur, 0) || 0;
 
-  const stokAsli = produksi?.reduce((sum, p) => sum + p.jumlah_telur, 0) || 0;
-
-  // penjualan
   const { data: penjualan } = await supabase.from('penjualan').select('jumlah');
+  const terjual = penjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
 
-  const terjual = penjualan?.reduce((sum, p) => sum + p.jumlah, 0) || 0;
-
-  // pending
   const { data: orders } = await supabase.from('orders').select('jumlah_pesan, status_order');
+  const pendingKg = orders?.filter((o) => o.status_order !== 'selesai').reduce((s, o) => s + o.jumlah_pesan, 0) || 0;
 
-  const pendingKg = orders?.filter((o) => o.status_order !== 'selesai').reduce((sum, o) => sum + o.jumlah_pesan, 0) || 0;
-
-  // harga
   const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
 
   const harga = hargaRow?.harga_per_kg || 0;
 
-  const uang = terjual * harga;
-
-  const stokTersisa = stokAsli - terjual;
-
   res.send({
-    stok: stokTersisa,
+    stok: stokAsli - terjual,
     pendingKg,
-    uang,
+    uang: terjual * harga,
   });
 });
 
 // ===============================
-// 💰 GET HARGA
-// ===============================
 app.get('/harga', async (req, res) => {
-  const { data, error } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
-
-  if (error) return res.status(500).send(error);
-
+  const { data } = await supabase.from('settings').select('*').eq('id', 1).single();
   res.send(data);
 });
 
-// ===============================
-// 💰 UPDATE HARGA
-// ===============================
 app.post('/harga', async (req, res) => {
   const { harga } = req.body;
-
-  const { error } = await supabase.from('settings').update({ harga_per_kg: harga }).eq('id', 1);
-
-  if (error) return res.status(500).send(error);
-
-  res.send({ message: 'Harga diperbarui' });
+  await supabase.from('settings').update({ harga_per_kg: harga }).eq('id', 1);
+  res.send({ message: 'ok' });
 });
 
 // ===============================
-// 🧪 DEBUG
-// ===============================
-app.get('/debug', async (req, res) => {
-  const { data, error } = await supabase.from('orders').select('*');
+const PORT = process.env.PORT || 3000;
 
-  if (error) return res.send(error);
-
-  res.send(data);
-});
-
-// ===============================
-// 🔄 RESET PENJUALAN
-// ===============================
-app.delete('/penjualan/reset', async (req, res) => {
-  const { error } = await supabase.from('penjualan').delete().neq('id', 0);
-
-  if (error) return res.status(500).send(error);
-
-  res.send({ message: 'Uang berhasil direset' });
-});
-
-// ===============================
 app.listen(PORT, () => {
   console.log('🚀 Server jalan di port ' + PORT);
 });
