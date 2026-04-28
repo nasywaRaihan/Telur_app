@@ -1,0 +1,300 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Telur App</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa, #e4e7eb);
+        color: #222;
+        margin: 0;
+        padding: 20px;
+      }
+
+      /* TITLE */
+      h1 {
+        color: #ffd700;
+        text-align: center;
+        margin-bottom: 25px;
+        letter-spacing: 1px;
+      }
+
+      /* CONTAINER */
+      .container {
+        max-width: 900px;
+        margin: auto;
+        margin-bottom: 20px;
+      }
+
+      /* GRID */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+
+      .dashboard {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      /* CARD */
+      .card {
+        background: #ffffff;
+        color: #222;
+        padding: 16px;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+      }
+
+      /* INPUT */
+      input {
+        width: 100%;
+        padding: 14px 16px;
+        margin-top: 10px;
+        margin-bottom: 12px;
+
+        border-radius: 12px;
+        border: 1px solid #ddd;
+
+        background: #ffffff;
+        color: #222;
+
+        font-size: 15px;
+
+        outline: none;
+        transition: 0.2s;
+      }
+
+      input:focus {
+        border: 1px solid #ffd700;
+        box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+      }
+
+      .card input + input {
+        margin-top: 8px;
+      }
+
+      /* BUTTON */
+      button {
+        padding: 10px;
+        width: 100%;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #ffd700, #ffcc00);
+        color: black;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      button:hover {
+        transform: scale(1.04);
+        opacity: 0.9;
+      }
+
+      /* LIST */
+      li {
+        list-style: none;
+        background: rgba(250, 213, 121, 0.096);
+        margin-top: 10px;
+        padding: 14px;
+        border-radius: 10px;
+        animation: fadeIn 0.3s ease;
+        border-left: 4px solid #ffb800;
+      }
+
+      li .selesai {
+        opacity: 0.7;
+      }
+
+      .selesai {
+        background: #4caf50;
+        opacity: 0.85;
+      }
+
+      .done {
+        background: #e8f5e9; /* hijau soft */
+        border-left: 4px solid #4caf50;
+        opacity: 0.85;
+      }
+
+      .done b {
+        text-decoration: line-through;
+        color: #888;
+      }
+
+      /* STATUS */
+      .status {
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-top: 6px;
+        text-transform: capitalize;
+      }
+
+      .selesai {
+        background: #4caf50;
+      }
+
+      .sebagian {
+        background: #ffc107;
+        color: black;
+      }
+
+      .menunggu {
+        background: #777;
+      }
+
+      /* ORDER LAYOUT */
+      .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .order-left {
+        flex: 1;
+      }
+
+      /* BUTTON KANAN */
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .actions button {
+        width: 90px;
+        padding: 6px;
+        font-size: 12px;
+      }
+
+      .actions button:nth-child(1) {
+        background: #4caf50;
+        color: white;
+      }
+
+      .actions button:nth-child(3) {
+        background: #f44336;
+        color: white;
+      }
+
+      #search {
+        background: #fff;
+        color: #222;
+        border: 1px solid #ccc;
+        padding-left: 40px;
+        position: relative;
+      }
+
+      /* ANIMASI */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* RESPONSIVE */
+      @media (max-width: 768px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .dashboard {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>🥚 Juragan Telur</h1>
+
+    <!-- HARGA -->
+    <div class="container">
+      <div class="card">
+        <h3>💰 Harga Telur</h3>
+        <p id="hargaDisplay">Memuat harga...</p>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="container">
+      <div class="grid dashboard">
+        <div class="card">
+          <h3>🥚 Stok Telor</h3>
+          <h2 id="stok" style="font-size: 28px">0 kg</h2>
+          <p id="stokInfo" style="font-size: 14px; color: #ff6b6b; margin-top: 5px"></p>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <h3>💰 Jumlah Uang</h3>
+            <button onclick="resetUang()" style="width: auto; padding: 5px 10px; font-size: 12px; background: #f44336">Reset</button>
+          </div>
+
+          <!-- 🔥 INI YANG KURANG -->
+          <h2 id="uang" style="color: #ffd700; font-size: 28px; margin-top: 10px">Rp 0</h2>
+        </div>
+
+        <div class="card">
+          <h3>📦 Pending</h3>
+          <h2 id="pending">0</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUKSI + HARGA -->
+    <div class="container">
+      <div class="grid">
+        <div class="card">
+          <h3>🥚 Produksi</h3>
+          <input id="produksi" type="number" placeholder="Jumlah telur (kg)" />
+          <button onclick="tambahProduksi()">Simpan</button>
+        </div>
+
+        <div class="card">
+          <h3>💰 Update Harga</h3>
+          <input id="harga" type="number" placeholder="Harga per kg" />
+          <button onclick="updateHarga()">Simpan Harga</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAMBAH ORDER -->
+    <div class="container">
+      <div class="card">
+        <h3>📦 Tambah Pesanan</h3>
+        <input id="nama" placeholder="Nama" />
+        <input id="jumlah" type="number" placeholder="Jumlah (kg)" />
+        <button onclick="tambahOrder()">Tambah</button>
+      </div>
+
+      <div class="card" style="margin-top: 15px">
+        <h3>📋 Daftar Pesanan</h3>
+
+        <input id="search" placeholder="🔍 Cari nama..." oninput="filterOrders()" />
+
+        <ul id="list"></ul>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
