@@ -26,11 +26,20 @@ async function tambahOrder() {
 
   if (!nama || !jumlah) return alert('Isi semua data!');
 
-  await fetch(`${API}/orders`, {
+  const res = await fetch(`${API}/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nama, jumlah }),
   });
+
+  const result = await res.json();
+
+  console.log('RESP:', result);
+
+  if (!res.ok) {
+    alert('Gagal simpan!');
+    return;
+  }
 
   document.getElementById('nama').value = '';
   document.getElementById('jumlah').value = '';

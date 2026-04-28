@@ -30,7 +30,7 @@ app.post('/orders', async (req, res) => {
   const { error } = await supabase.from('orders').insert([
     {
       nama,
-      jumlah_pesan: jumlah,
+      jumlah_pesan: parseInt(jumlah),
       jumlah_terpenuhi: 0,
       status_order: 'menunggu',
       status_bayar: 'belum',
@@ -139,6 +139,38 @@ app.post('/harga', async (req, res) => {
   const { harga } = req.body;
   await supabase.from('settings').update({ harga_per_kg: harga }).eq('id', 1);
   res.send({ message: 'ok' });
+});
+
+app.delete('/orders/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const { error } = await supabase.from('orders').delete().eq('id', id);
+
+  if (error) return res.status(500).send(error);
+
+  res.send({ message: 'Order dihapus' });
+});
+
+app.patch('/orders/:id', async (req, res) => {
+  const { id } = req.params;
+  const { jumlah } = req.body;
+
+  const { error } = await supabase
+    .from('orders')
+    .update({ jumlah_pesan: parseInt(jumlah) })
+    .eq('id', id);
+
+  if (error) return res.status(500).send(error);
+
+  res.send({ message: 'Order diupdate' });
+});
+
+app.delete('/penjualan/reset', async (req, res) => {
+  const { error } = await supabase.from('penjualan').delete().neq('id', 0);
+
+  if (error) return res.status(500).send(error);
+
+  res.send({ message: 'Reset berhasil' });
 });
 
 // ===============================
