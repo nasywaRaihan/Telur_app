@@ -1,4 +1,4 @@
-const API = 'http://192.168.1.5:3000';
+const API = 'https://telurapp-production.up.railway.app';
 
 let HARGA_GLOBAL = 0;
 let SEMUA_ORDERS = [];

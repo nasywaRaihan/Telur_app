@@ -214,6 +214,6 @@ app.delete('/penjualan/reset', async (req, res) => {
 // ===============================
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '192.168.1.5', () => {
   console.log('🚀 Server jalan di port ' + PORT);
 });
