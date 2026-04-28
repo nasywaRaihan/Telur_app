@@ -1,7 +1,13 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const supabase = require('./supabase');
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 process.on('uncaughtException', (err) => {
   console.error('❌ UNCAUGHT ERROR:', err);
@@ -13,7 +19,6 @@ process.on('unhandledRejection', (err) => {
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // ===============================
@@ -212,8 +217,6 @@ app.delete('/penjualan/reset', async (req, res) => {
 });
 
 // ===============================
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, '192.168.1.5', () => {
+app.listen(PORT, () => {
   console.log('🚀 Server jalan di port ' + PORT);
 });
