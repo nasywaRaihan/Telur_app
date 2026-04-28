@@ -1,269 +1,219 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const db = require('./database');
+const supabase = require('./supabase');
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ UNCAUGHT ERROR:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('❌ UNHANDLED PROMISE:', err);
+});
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// 🔥 DISTRIBUSI TELUR
-function distribusiTelur(stok) {
-  return new Promise((resolve) => {
-    db.all(
-      `
-      SELECT * FROM orders
-      WHERE status_order != 'selesai'
-      ORDER BY id ASC
-    `,
-      [],
-      (err, orders) => {
-        let sisa = stok;
+// ===============================
+// 📦 TAMBAH ORDER
+// ===============================
+app.post('/orders', async (req, res) => {
+  const { nama, jumlah } = req.body;
 
-        orders.forEach((order) => {
-          if (sisa <= 0) return;
+  const { error } = await supabase.from('orders').insert([
+    {
+      nama,
+      jumlah_pesan: jumlah,
+      jumlah_terpenuhi: 0,
+      status_order: 'menunggu',
+      status_bayar: 'belum',
+      tanggal: new Date().toISOString(),
+    },
+  ]);
 
-          let kurang = order.jumlah_pesan - order.jumlah_terpenuhi;
-          let ambil = Math.min(kurang, sisa);
+  if (error) return res.status(500).send(error);
 
-          let newJumlah = order.jumlah_terpenuhi + ambil;
-          let status = newJumlah >= order.jumlah_pesan ? 'selesai' : 'sebagian';
+  res.send({ message: 'Order ditambahkan' });
+});
 
-          db.run(
-            `
-          UPDATE orders
-          SET jumlah_terpenuhi = ?, status_order = ?
-          WHERE id = ?
-        `,
-            [newJumlah, status, order.id],
-          );
+// ===============================
+// 📦 GET ORDERS
+// ===============================
+app.get('/orders', async (req, res) => {
+  const { data, error } = await supabase.from('orders').select('*').order('id', { ascending: true });
 
-          sisa -= ambil;
-        });
+  if (error) return res.status(500).send(error);
 
-        resolve();
-      },
-    );
-  });
-}
+  res.send(data);
+});
 
-// 📌 INPUT PRODUKSI
+// ===============================
+// 💰 BAYAR (SELESAI)
+// ===============================
+app.patch('/orders/:id/bayar', async (req, res) => {
+  const { id } = req.params;
+
+  // ambil order
+  const { data: order, error: err1 } = await supabase.from('orders').select('*').eq('id', id).single();
+
+  if (err1 || !order) {
+    return res.status(404).send({ error: 'Order tidak ditemukan' });
+  }
+
+  // simpan ke penjualan
+  await supabase.from('penjualan').insert([
+    {
+      jumlah: order.jumlah_pesan,
+      tanggal: new Date().toISOString(),
+    },
+  ]);
+
+  // update order
+  const { error } = await supabase
+    .from('orders')
+    .update({
+      status_bayar: 'lunas',
+      status_order: 'selesai',
+      jumlah_terpenuhi: order.jumlah_pesan,
+    })
+    .eq('id', id);
+
+  if (error) return res.status(500).send(error);
+
+  res.send({ message: 'Sudah dibayar & tercatat' });
+});
+
+// ===============================
+// ✏️ EDIT ORDER
+// ===============================
+app.patch('/orders/:id', async (req, res) => {
+  const { id } = req.params;
+  const { jumlah } = req.body;
+
+  const { error } = await supabase.from('orders').update({ jumlah_pesan: jumlah }).eq('id', id);
+
+  if (error) return res.status(500).send(error);
+
+  res.send({ message: 'Order diupdate' });
+});
+
+// ===============================
+// 🗑️ HAPUS ORDER
+// ===============================
+app.delete('/orders/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const { error } = await supabase.from('orders').delete().eq('id', id);
+
+  if (error) return res.status(500).send(error);
+
+  res.send({ message: 'Order dihapus' });
+});
+
+// ===============================
+// 🥚 PRODUKSI
+// ===============================
 app.post('/produksi', async (req, res) => {
   const { jumlah } = req.body;
-  const tanggal = new Date().toISOString().split('T')[0];
 
-  db.run(
-    `
-    INSERT INTO produksi (tanggal, jumlah_telur)
-    VALUES (?, ?)
-  `,
-    [tanggal, jumlah],
-  );
-
-  await distribusiTelur(jumlah);
-
-  res.send({ message: 'Produksi disimpan & didistribusikan' });
-});
-
-// 📌 GET ORDERS
-app.get('/orders', (req, res) => {
-  db.all(`SELECT * FROM orders ORDER BY id ASC`, [], (err, rows) => {
-    res.send(rows);
-  });
-});
-
-// 💰 BAYAR
-app.patch('/orders/:id/bayar', (req, res) => {
-  db.get(`SELECT * FROM orders WHERE id = ?`, [req.params.id], (err, order) => {
-    if (err || !order) {
-      return res.status(404).send({ error: 'Order tidak ditemukan' });
-    }
-
-    // 🔥 simpan ke penjualan
-    db.run(`INSERT INTO penjualan (jumlah, tanggal) VALUES (?, ?)`, [order.jumlah_pesan, new Date().toISOString()]);
-
-    // 🔥 update order
-    db.run(
-      `
-      UPDATE orders
-      SET 
-        status_bayar = 'lunas',
-        status_order = 'selesai',
-        jumlah_terpenuhi = jumlah_pesan
-      WHERE id = ?
-    `,
-      [req.params.id],
-      function (err) {
-        if (err) {
-          console.error(err);
-          return res.status(500).send({ error: 'Gagal update' });
-        }
-
-        res.send({ message: 'Sudah dibayar & tercatat sebagai penjualan' });
-      },
-    );
-  });
-});
-
-app.get('/dashboard', (req, res) => {
-  // 🔹 STOK PRODUKSI
-  db.get(
-    `
-    SELECT SUM(jumlah_telur) as stok
-    FROM produksi
-    WHERE tanggal = DATE('now')
-  `,
-    [],
-    (err, stok) => {
-      // 🔹 SUDAH SELESAI (INI YANG MENGURANGI STOK)
-      db.get(
-        `
-        SELECT SUM(jumlah) as terjual
-        FROM penjualan
-      `,
-        [],
-        (err, selesai) => {
-          // 🔹 PENDING (INFO SAJA)
-          db.get(
-            `
-        SELECT SUM(jumlah_pesan) as pending
-        FROM orders
-        WHERE status_order != 'selesai'
-      `,
-            [],
-            (err, pending) => {
-              // 🔹 UANG
-              db.get(
-                `
-                SELECT SUM(jumlah * (
-                  SELECT harga_per_kg FROM settings WHERE id = 1
-                  )) as uang
-                FROM penjualan
-                `,
-                [],
-                (err, uang) => {
-                  const stokAsli = stok?.stok || 0;
-                  const terjual = selesai?.terjual || 0;
-                  const pendingKg = pending?.pending || 0;
-
-                  const stokTersisa = stokAsli - terjual;
-
-                  res.send({
-                    stok: stokTersisa,
-                    pendingKg: pendingKg,
-                    uang: uang?.uang || 0,
-                  });
-                },
-              );
-            },
-          );
-        },
-      );
+  const { error } = await supabase.from('produksi').insert([
+    {
+      jumlah_telur: jumlah,
+      tanggal: new Date().toISOString(),
     },
-  );
+  ]);
+
+  if (error) return res.status(500).send(error);
+
+  res.send({ message: 'Produksi disimpan' });
 });
 
-//GET HARGA
-app.get('/harga', (req, res) => {
-  db.get(`SELECT harga_per_kg FROM settings WHERE id = 1`, [], (err, row) => {
-    res.send(row);
+// ===============================
+// 📊 DASHBOARD
+// ===============================
+app.get('/dashboard', async (req, res) => {
+  // produksi
+  const { data: produksi } = await supabase.from('produksi').select('jumlah_telur');
+
+  const stokAsli = produksi?.reduce((sum, p) => sum + p.jumlah_telur, 0) || 0;
+
+  // penjualan
+  const { data: penjualan } = await supabase.from('penjualan').select('jumlah');
+
+  const terjual = penjualan?.reduce((sum, p) => sum + p.jumlah, 0) || 0;
+
+  // pending
+  const { data: orders } = await supabase.from('orders').select('jumlah_pesan, status_order');
+
+  const pendingKg = orders?.filter((o) => o.status_order !== 'selesai').reduce((sum, o) => sum + o.jumlah_pesan, 0) || 0;
+
+  // harga
+  const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
+
+  const harga = hargaRow?.harga_per_kg || 0;
+
+  const uang = terjual * harga;
+
+  const stokTersisa = stokAsli - terjual;
+
+  res.send({
+    stok: stokTersisa,
+    pendingKg,
+    uang,
   });
 });
 
-//UPDATE HARGA
-app.post('/harga', (req, res) => {
+// ===============================
+// 💰 GET HARGA
+// ===============================
+app.get('/harga', async (req, res) => {
+  const { data, error } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
+
+  if (error) return res.status(500).send(error);
+
+  res.send(data);
+});
+
+// ===============================
+// 💰 UPDATE HARGA
+// ===============================
+app.post('/harga', async (req, res) => {
   const { harga } = req.body;
 
-  db.run(
-    `
-    UPDATE settings
-    SET harga_per_kg = ?
-    WHERE id = 1
-  `,
-    [harga],
-  );
+  const { error } = await supabase.from('settings').update({ harga_per_kg: harga }).eq('id', 1);
+
+  if (error) return res.status(500).send(error);
 
   res.send({ message: 'Harga diperbarui' });
 });
 
-// EDIT ORDER
-app.patch('/orders/:id', (req, res) => {
-  const { jumlah } = req.body;
+// ===============================
+// 🧪 DEBUG
+// ===============================
+app.get('/debug', async (req, res) => {
+  const { data, error } = await supabase.from('orders').select('*');
 
-  db.run(`UPDATE orders SET jumlah_pesan = ? WHERE id = ?`, [jumlah, req.params.id], function (err) {
-    if (err) {
-      console.error(err);
-      return res.status(500).send({ error: 'Gagal edit' });
-    }
+  if (error) return res.send(error);
 
-    res.send({ message: 'Order diupdate' });
-  });
+  res.send(data);
 });
 
-app.post('/orders', (req, res) => {
-  const { nama, jumlah } = req.body;
-  const tanggal = new Date().toISOString();
+// ===============================
+// 🔄 RESET PENJUALAN
+// ===============================
+app.delete('/penjualan/reset', async (req, res) => {
+  const { error } = await supabase.from('penjualan').delete().neq('id', 0);
 
-  db.run(
-    `
-    INSERT INTO orders 
-    (nama, jumlah_pesan, jumlah_terpenuhi, status_order, tanggal)
-    VALUES (?, ?, 0, 'menunggu', ?)
-  `,
-    [nama, jumlah, tanggal],
-    function (err) {
-      if (err) {
-        console.error(err);
-        return res.status(500).send({ error: 'Gagal tambah' });
-      }
+  if (error) return res.status(500).send(error);
 
-      res.send({ message: 'Order ditambahkan' });
-    },
-  );
+  res.send({ message: 'Uang berhasil direset' });
 });
 
-// HAPUS ORDER
-app.delete('/orders/:id', (req, res) => {
-  db.run(`DELETE FROM orders WHERE id = ?`, [req.params.id], function (err) {
-    if (err) {
-      console.error(err);
-      return res.status(500).send({ error: 'Gagal hapus' });
-    }
-
-    res.send({ message: 'Order dihapus' });
-  });
-});
-
-app.get('/debug', (req, res) => {
-  db.all(`SELECT * FROM orders`, [], (err, rows) => {
-    res.send(rows);
-  });
-});
-
-app.get('/debug', (req, res) => {
-  db.all(`SELECT * FROM orders`, [], (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.send('ERROR DB');
-    }
-    res.send(rows);
-  });
-});
-
-app.delete('/penjualan/reset', (req, res) => {
-  db.run(`DELETE FROM penjualan`, [], function (err) {
-    if (err) {
-      console.error(err);
-      return res.status(500).send({ error: 'Gagal reset' });
-    }
-
-    res.send({ message: 'Uang berhasil direset' });
-  });
-});
-
+// ===============================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log('Server jalan di port ' + PORT);
+  console.log('🚀 Server jalan di port ' + PORT);
 });
