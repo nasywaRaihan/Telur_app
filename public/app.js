@@ -228,24 +228,29 @@ async function editOrder(id, jumlahLama) {
     body: JSON.stringify({ jumlah: jumlahBaru }),
   });
 
+  showToast('Data berhasil diupdate');
+
   init();
 }
 
 // HAPUS ORDER
 async function hapusOrder(id) {
-  const yakin = confirm('Yakin mau hapus?');
-  if (!yakin) return;
+  showConfirm('Yakin mau hapus?', async (result) => {
+    if (!result) return;
 
-  await fetch(`${API}/orders/${id}`, {
-    method: 'DELETE',
+    await fetch(`${API}/orders/${id}`, {
+      method: 'DELETE',
+    });
   });
+
+  showToast('Pesanan berhasil dihapus');
 
   init();
 }
 
 // RESET UANG
 async function resetUang() {
-  const yakin = confirm('Reset uang hari ini?');
+  const yakin = showConfirm('Reset uang hari ini?');
   if (!yakin) return;
 
   await fetch(`${API}/penjualan/reset`, {
@@ -261,9 +266,20 @@ async function resetUang() {
 function showToast(message, type = 'success') {
   const container = document.getElementById('toast-container');
 
+  const icons = {
+    success: '✔',
+    error: '✖',
+    info: '⚠',
+  };
+
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerText = message;
+
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type]}</span>
+    <span>${message}</span>
+    <div class="toast-progress"></div>
+  `;
 
   container.appendChild(toast);
 
@@ -271,6 +287,23 @@ function showToast(message, type = 'success') {
     toast.style.animation = 'fadeOut 0.3s forwards';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+let confirmCallback = null;
+
+function showConfirm(message, callback) {
+  document.getElementById('confirm-text').innerText = message;
+  document.getElementById('confirm-modal').classList.remove('hidden');
+  confirmCallback = callback;
+}
+
+function handleConfirm(result) {
+  document.getElementById('confirm-modal').classList.add('hidden');
+
+  if (confirmCallback) {
+    confirmCallback(result);
+    confirmCallback = null;
+  }
 }
 
 // INIT JALAN
