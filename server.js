@@ -115,10 +115,15 @@ app.get('/dashboard', async (req, res) => {
 
   const stokAsli = produksi?.reduce((s, p) => s + p.jumlah_telur, 0) || 0;
 
-  // PENJUALAN (yang masih dihitung)
-  const { data: penjualan } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
+  // 🔥 SEMUA PENJUALAN (UNTUK STOK)
+  const { data: semuaPenjualan } = await supabase.from('penjualan').select('jumlah');
 
-  const terjual = penjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
+  const totalTerjual = semuaPenjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
+
+  // 🔥 PENJUALAN YANG BELUM DIRESET (UNTUK UANG)
+  const { data: penjualanAktif } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
+
+  const uangTerjual = penjualanAktif?.reduce((s, p) => s + p.jumlah, 0) || 0;
 
   // HARGA
   const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
@@ -133,10 +138,10 @@ app.get('/dashboard', async (req, res) => {
   const pending = orders?.filter((o) => o.status_order === 'menunggu').length || 0;
 
   res.send({
-    stok: stokAsli - terjual,
+    stok: stokAsli - totalTerjual, // 🔥 tidak ikut reset
     pendingKg,
     pending,
-    uang: terjual * harga,
+    uang: uangTerjual * harga, // 🔥 bisa di-reset
   });
 });
 
