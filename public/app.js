@@ -20,7 +20,7 @@ async function init() {
 }
 
 // TAMBAH ORDER
-async function tambahOrder() {
+async function tambahOrder(btn) {
   const nama = document.getElementById('nama').value;
   const jumlah = document.getElementById('jumlah').value;
 
@@ -28,6 +28,8 @@ async function tambahOrder() {
     showToast('Isi semua data!', 'error');
     return;
   }
+
+  setLoading(btn, true, 'Menyimpan...');
 
   const res = await fetch(`${API}/orders`, {
     method: 'POST',
@@ -37,32 +39,36 @@ async function tambahOrder() {
 
   const result = await res.json();
 
+  setLoading(btn, false);
+
   if (!res.ok) {
     showToast('Gagal simpan!', 'error');
     return;
   }
 
-  // 🔥 INI YANG KURANG
   showToast('Pesanan berhasil ditambahkan');
 
   document.getElementById('nama').value = '';
   document.getElementById('jumlah').value = '';
 
-  await loadOrders();
-  await loadDashboard();
+  init();
 }
 
 // PRODUKSI
-async function tambahProduksi() {
+async function tambahProduksi(btn) {
   const jumlah = document.getElementById('produksi').value;
 
-  if (!jumlah) return showToast('Isi jumlah dulu!');
+  if (!jumlah) return showToast('Isi jumlah dulu!', 'error');
+
+  setLoading(btn, true);
 
   await fetch(`${API}/produksi`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jumlah }),
   });
+
+  setLoading(btn, false);
 
   showToast('Produksi berhasil!');
   document.getElementById('produksi').value = '';
@@ -71,20 +77,22 @@ async function tambahProduksi() {
 }
 
 // BAYAR
-async function bayar(id) {
+async function bayar(id, btn) {
+  setLoading(btn, true, 'Proses...');
+
   const res = await fetch(`${API}/orders/${id}/bayar`, {
     method: 'PATCH',
   });
 
   const result = await res.json();
 
-  // ❌ kalau gagal (stok tidak cukup)
+  setLoading(btn, false);
+
   if (!res.ok) {
-    showToast(result.error || 'Stok tidak cukup!');
+    showToast(result.error || 'Stok tidak cukup!', 'error');
     return;
   }
 
-  // ✅ kalau sukses
   showToast('Pesanan berhasil diselesaikan');
   init();
 }
@@ -149,7 +157,7 @@ function renderOrders(data) {
 
     const belumSelesai = o.status_order !== 'selesai';
 
-    const tombolBayar = belumSelesai ? `<button onclick="bayar(${o.id})">Selesai</button>` : '';
+    const tombolBayar = belumSelesai ? `<button onclick="bayar(${o.id}, this)">Selesai</button>` : '';
 
     const tombolEdit = belumSelesai ? `<button onclick="editOrder(${o.id}, ${o.jumlah_pesan})">Edit</button>` : '';
 
@@ -162,19 +170,25 @@ function renderOrders(data) {
       <div class="order-item">
 
         <div class="order-left">
-          <b>${index + 1}. ${o.nama}</b><br>
+          
+          <div class="order-name">${o.nama}</div>
 
-          📅 ${new Date(o.tanggal).toLocaleDateString('id-ID')}<br>
+          <div class="order-date">
+            ${new Date(o.tanggal).toLocaleDateString('id-ID')}
+          </div>
 
-          ${o.jumlah_pesan} kg<br>
+          <div class="order-qty-row">
+            <span class="order-qty">${o.jumlah_pesan} kg</span>
 
-          <span class="status ${o.status_order}">
-            ${o.status_order}
-          </span>
+            <span class="status ${o.status_order}">
+              ${o.status_order}
+            </span>
+          </div>
 
-          <br>
+          <div class="order-price">
+            💰 ${formatRupiah(total)}
+          </div>
 
-          💰 ${formatRupiah(total)}
         </div>
 
         <div class="actions">
@@ -247,13 +261,17 @@ async function hapusOrder(id) {
 }
 
 // RESET UANG
-async function resetUang() {
+function resetUang(btn) {
   showConfirm('Reset uang hari ini?', async (ok) => {
     if (!ok) return;
+
+    setLoading(btn, true, 'Reset...');
 
     await fetch(`${API}/penjualan/reset`, {
       method: 'PATCH',
     });
+
+    setLoading(btn, false);
 
     showToast('Uang berhasil direset');
     init();
@@ -346,6 +364,22 @@ document.getElementById('edit-modal').addEventListener('click', (e) => {
     handleEdit(false);
   }
 });
+
+// LOADING STATE
+function setLoading(button, isLoading, text = 'Loading...') {
+  if (!button) return;
+
+  if (isLoading) {
+    button.dataset.originalText = button.innerText;
+    button.innerText = text;
+    button.disabled = true;
+    button.style.opacity = '0.6';
+  } else {
+    button.innerText = button.dataset.originalText || 'Submit';
+    button.disabled = false;
+    button.style.opacity = '1';
+  }
+}
 
 // INIT JALAN
 init();

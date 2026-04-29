@@ -132,6 +132,14 @@
         opacity: 0.9;
       }
 
+      button {
+        transition: all 0.2s ease;
+      }
+
+      button:active {
+        transform: scale(0.95);
+      }
+
       /* LIST */
       li {
         list-style: none;
@@ -180,8 +188,100 @@
         transition: 0.2s;
       }
 
+      /* MAIN LAYOUT */
+      .order-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .order-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      /* LEFT SIDE */
+      .order-left {
+        flex: 1;
+      }
+
+      /* NAMA + JUMLAH */
+      .order-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .order-name {
+        font-size: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .order-qty {
+        font-size: 18px;
+        font-weight: 600;
+        margin-right: 20px;
+        color: #ff9800;
+      }
+
+      /* SUB INFO */
+      .order-sub {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 4px;
+      }
+
+      .order-date {
+        font-size: 12px;
+        color: #777;
+        margin-top: 5px;
+      }
+
+      /* HARGA */
+      .order-price {
+        margin-top: 6px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #222;
+      }
+
+      /* STATUS DI BAWAH TANGGAL */
+      .order-status {
+        margin-top: 4px;
+      }
+
+      /* STATUS BADGE */
+      .status {
+        font-size: 11px;
+        padding: 4px 10px;
+        margin-left: 10px;
+        border-radius: 6px;
+        display: inline-block;
+      }
+
+      .status.selesai {
+        background: #4caf50;
+        color: white;
+      }
+
+      .status.menunggu {
+        background: #777;
+        color: white;
+      }
+
+      .status.sebagian {
+        background: #ffc107;
+        color: black;
+      }
+
       #list li:hover {
-        background: #fff3c4;
+        transform: translateY(-2px);
+        background: #fff8dc;
       }
 
       /* KHUSUS CARD LIST */
@@ -232,9 +332,9 @@
       }
 
       .actions button {
-        width: 90px;
-        padding: 6px;
-        font-size: 12px;
+        width: 80px;
+        font-size: 11px;
+        padding: 5px;
       }
 
       .actions button:nth-child(1) {
@@ -367,6 +467,15 @@
         border: 1px solid #ccc;
       }
 
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        overflow-y: auto;
+      }
+
       /* ANIMATION */
       @keyframes slideIn {
         to {
@@ -404,11 +513,100 @@
 
       /* RESPONSIVE */
       @media (max-width: 768px) {
-        .grid {
+        body {
+          padding: 12px;
+        }
+
+        .container {
+          margin-bottom: 15px;
+        }
+
+        .card {
+          padding: 14px;
+          border-radius: 12px;
+        }
+
+        .card h2 {
+          font-size: 22px;
+        }
+
+        .card h3 {
+          font-size: 14px;
+        }
+
+        /* GRID DASHBOARD RESET */
+        .dashboard {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        /* URUTAN */
+        .dashboard .card:nth-child(1) {
+          order: 1; /* STOK */
+        }
+
+        .dashboard .card:nth-child(3) {
+          order: 2; /* PENDING */
+        }
+
+        .dashboard .card:nth-child(2) {
+          order: 3; /* UANG */
+        }
+
+        /* STOK + PENDING JADI 2 KOLOM */
+        .dashboard {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+        }
+
+        /* UANG FULL WIDTH */
+        .dashboard .card:nth-child(2) {
+          grid-column: span 2;
+        }
+
+        /* KHUSUS PRODUKSI + HARGA */
+        .container .grid {
           grid-template-columns: 1fr;
         }
-        .dashboard {
-          grid-template-columns: 1fr;
+
+        button {
+          padding: 14px;
+          font-size: 14px;
+          border-radius: 10px;
+        }
+
+        .actions button {
+          width: 70px;
+          font-size: 10px;
+          padding: 6px;
+        }
+
+        input {
+          padding: 16px;
+          font-size: 16px;
+        }
+
+        #list li {
+          padding: 12px;
+        }
+
+        .order-name {
+          font-size: 16px;
+        }
+
+        .order-qty {
+          font-size: 14px;
+        }
+
+        .order-price {
+          font-size: 14px;
+        }
+      }
+
+      @media (hover: none) {
+        .card:hover {
+          transform: none;
         }
       }
     </style>
@@ -437,7 +635,7 @@
         <div class="card card-info">
           <div style="display: flex; justify-content: space-between; align-items: center">
             <h3>💰 Jumlah Uang</h3>
-            <button onclick="resetUang()" style="width: auto; padding: 5px 10px; font-size: 12px; background: #f44336">Reset</button>
+            <button onclick="resetUang(this)" style="width: auto; padding: 5px 10px; font-size: 12px; background: #f44336">Reset</button>
           </div>
 
           <!-- 🔥 INI YANG KURANG -->
@@ -446,7 +644,7 @@
 
         <div class="card card-info">
           <h3>📦 Pending</h3>
-          <h2 id="pending">0</h2>
+          <h2 id="pending" style="font-size: 28px">0</h2>
         </div>
       </div>
     </div>
@@ -457,7 +655,7 @@
         <div class="card card-input-info">
           <h3>🥚 Produksi</h3>
           <input id="produksi" type="number" placeholder="Jumlah telur (kg)" />
-          <button onclick="tambahProduksi()">Simpan</button>
+          <button onclick="tambahProduksi(this)">Simpan</button>
         </div>
 
         <div class="card card-input-info">
@@ -474,7 +672,7 @@
         <h3>📦 Tambah Pesanan</h3>
         <input id="nama" placeholder="Nama" />
         <input id="jumlah" type="number" placeholder="Jumlah (kg)" />
-        <button onclick="tambahOrder()">Tambah</button>
+        <button onclick="tambahOrder(this)">Tambah</button>
       </div>
 
       <div class="card list-order" style="margin-top: 15px">
