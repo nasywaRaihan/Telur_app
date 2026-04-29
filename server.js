@@ -115,33 +115,31 @@ app.get('/dashboard', async (req, res) => {
 
   const stokAsli = produksi?.reduce((s, p) => s + p.jumlah_telur, 0) || 0;
 
-  // 🔥 SEMUA PENJUALAN (UNTUK STOK)
-  const { data: semuaPenjualan } = await supabase.from('penjualan').select('jumlah');
-
-  const totalTerjual = semuaPenjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
-
-  // 🔥 PENJUALAN YANG BELUM DIRESET (UNTUK UANG)
-  const { data: penjualanAktif } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
-
-  const uangTerjual = penjualanAktif?.reduce((s, p) => s + p.jumlah, 0) || 0;
-
-  // HARGA
-  const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
-
-  const harga = hargaRow?.harga_per_kg || 0;
-
   // ORDERS
   const { data: orders } = await supabase.from('orders').select('jumlah_pesan, status_order');
 
+  // 🔥 SUDAH SELESAI → KURANGI STOK
+  const selesaiKg = orders?.filter((o) => o.status_order === 'selesai').reduce((s, o) => s + o.jumlah_pesan, 0) || 0;
+
+  // 🔥 PENDING
   const pendingKg = orders?.filter((o) => o.status_order !== 'selesai').reduce((s, o) => s + o.jumlah_pesan, 0) || 0;
 
   const pending = orders?.filter((o) => o.status_order === 'menunggu').length || 0;
 
+  // 🔥 UANG (dari penjualan)
+  const { data: penjualan } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
+
+  const totalTerjual = penjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
+
+  const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
+
+  const harga = hargaRow?.harga_per_kg || 0;
+
   res.send({
-    stok: stokAsli - totalTerjual, // 🔥 tidak ikut reset
+    stok: stokAsli - selesaiKg, // 🔥 FIX DI SINI
     pendingKg,
     pending,
-    uang: uangTerjual * harga, // 🔥 bisa di-reset
+    uang: totalTerjual * harga,
   });
 });
 
