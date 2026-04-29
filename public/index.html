@@ -255,6 +255,49 @@
         position: relative;
       }
 
+      #toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+      }
+
+      .toast {
+        min-width: 250px;
+        margin-bottom: 10px;
+        padding: 14px 16px;
+        border-radius: 10px;
+        color: white;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+        opacity: 0;
+        transform: translateX(100%);
+        animation: slideIn 0.3s forwards;
+      }
+
+      .toast.success {
+        background: #4caf50;
+      }
+
+      .toast.error {
+        background: #f44336;
+      }
+
+      @keyframes slideIn {
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes fadeOut {
+        to {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+      }
+
       /* ANIMASI */
       @keyframes fadeIn {
         from {
@@ -278,6 +321,8 @@
       }
     </style>
   </head>
+
+  <div id="toast-container"></div>
 
   <body>
     <h1>🥚 Juragan Telur</h1>

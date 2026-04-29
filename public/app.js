@@ -24,7 +24,7 @@ async function tambahOrder() {
   const nama = document.getElementById('nama').value;
   const jumlah = document.getElementById('jumlah').value;
 
-  if (!nama || !jumlah) return alert('Isi semua data!');
+  if (!nama || !jumlah) return showToast('Isi semua data!');
 
   const res = await fetch(`${API}/orders`, {
     method: 'POST',
@@ -36,7 +36,7 @@ async function tambahOrder() {
   console.log('RESP:', result);
 
   if (!res.ok) {
-    alert('Gagal simpan!');
+    showToast('Gagal simpan!');
     return;
   }
 
@@ -52,7 +52,7 @@ async function tambahOrder() {
 async function tambahProduksi() {
   const jumlah = document.getElementById('produksi').value;
 
-  if (!jumlah) return alert('Isi jumlah dulu!');
+  if (!jumlah) return showToast('Isi jumlah dulu!');
 
   await fetch(`${API}/produksi`, {
     method: 'POST',
@@ -60,7 +60,7 @@ async function tambahProduksi() {
     body: JSON.stringify({ jumlah }),
   });
 
-  alert('Produksi berhasil!');
+  showToast('Produksi berhasil!');
   document.getElementById('produksi').value = '';
 
   init();
@@ -76,12 +76,12 @@ async function bayar(id) {
 
   // ❌ kalau gagal (stok tidak cukup)
   if (!res.ok) {
-    alert(result.error || 'Stok tidak cukup!');
+    showToast(result.error || 'Stok tidak cukup!');
     return;
   }
 
   // ✅ kalau sukses
-  alert('Pesanan berhasil diselesaikan');
+  showToast('Pesanan berhasil diselesaikan');
   init();
 }
 
@@ -199,7 +199,7 @@ function filterOrders() {
 async function updateHarga() {
   const harga = document.getElementById('harga').value;
 
-  if (!harga) return alert('Isi harga dulu!');
+  if (!harga) return showToast('Isi harga dulu!');
 
   await fetch(`${API}/harga`, {
     method: 'POST',
@@ -207,7 +207,7 @@ async function updateHarga() {
     body: JSON.stringify({ harga }),
   });
 
-  alert('Harga berhasil diupdate');
+  showToast('Harga berhasil diupdate');
 
   init();
 }
@@ -248,9 +248,25 @@ async function resetUang() {
     method: 'PATCH',
   });
 
-  alert('Uang berhasil direset');
+  showToast('Uang berhasil direset');
 
   init();
+}
+
+// TOAST
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerText = message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = 'fadeOut 0.3s forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
 // INIT JALAN
