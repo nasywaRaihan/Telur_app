@@ -74,11 +74,14 @@ async function bayar(id) {
 
   const result = await res.json();
 
+  // ❌ kalau gagal (stok tidak cukup)
   if (!res.ok) {
-    alert(result.error); // 🔥 tampilkan error stok
+    alert(result.error || 'Stok tidak cukup!');
     return;
   }
 
+  // ✅ kalau sukses
+  alert('Pesanan berhasil diselesaikan');
   init();
 }
 
