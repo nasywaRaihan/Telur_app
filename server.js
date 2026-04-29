@@ -70,6 +70,7 @@ app.patch('/orders/:id/bayar', async (req, res) => {
     {
       jumlah: order.jumlah_pesan,
       tanggal: new Date().toISOString(),
+      is_counted: true, // 🔥 WAJIB
     },
   ]);
 
