@@ -109,29 +109,27 @@ app.post('/produksi', async (req, res) => {
 // DASHBOARD
 // ===============================
 app.get('/dashboard', async (req, res) => {
+  // PRODUKSI
   const { data: produksi } = await supabase.from('produksi').select('jumlah_telur');
 
   const stokAsli = produksi?.reduce((s, p) => s + p.jumlah_telur, 0) || 0;
 
+  // PENJUALAN (yang masih dihitung)
   const { data: penjualan } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
 
   const terjual = penjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
 
-  const terjual = penjualan?.filter((p) => !p.is_reset).reduce((s, p) => s + p.jumlah, 0) || 0;
-
-  const uang = penjualan?.filter((p) => !p.is_reset).reduce((s, p) => s + p.jumlah, 0) * harga || 0;
-
-  const { data: orders } = await supabase.from('orders').select('jumlah_pesan, status_order');
-
+  // HARGA
   const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
 
   const harga = hargaRow?.harga_per_kg || 0;
 
+  // ORDERS
+  const { data: orders } = await supabase.from('orders').select('jumlah_pesan, status_order');
+
   const pendingKg = orders?.filter((o) => o.status_order !== 'selesai').reduce((s, o) => s + o.jumlah_pesan, 0) || 0;
 
   const pending = orders?.filter((o) => o.status_order === 'menunggu').length || 0;
-
-  const penjualan = data || [];
 
   res.send({
     stok: stokAsli - terjual,
