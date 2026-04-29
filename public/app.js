@@ -24,7 +24,10 @@ async function tambahOrder() {
   const nama = document.getElementById('nama').value;
   const jumlah = document.getElementById('jumlah').value;
 
-  if (!nama || !jumlah) return showToast('Isi semua data!');
+  if (!nama || !jumlah) {
+    showToast('Isi semua data!', 'error');
+    return;
+  }
 
   const res = await fetch(`${API}/orders`, {
     method: 'POST',
@@ -33,17 +36,18 @@ async function tambahOrder() {
   });
 
   const result = await res.json();
-  console.log('RESP:', result);
 
   if (!res.ok) {
-    showToast('Gagal simpan!');
+    showToast('Gagal simpan!', 'error');
     return;
   }
+
+  // 🔥 INI YANG KURANG
+  showToast('Pesanan berhasil ditambahkan');
 
   document.getElementById('nama').value = '';
   document.getElementById('jumlah').value = '';
 
-  // 🔥 FIX DISINI
   await loadOrders();
   await loadDashboard();
 }
