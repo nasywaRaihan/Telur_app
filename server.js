@@ -66,11 +66,17 @@ app.patch('/orders/:id/bayar', async (req, res) => {
     return res.status(404).send({ error: 'Order tidak ditemukan' });
   }
 
+  // ambil harga dulu
+  const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
+
+  const harga = hargaRow?.harga_per_kg || 0;
+
   await supabase.from('penjualan').insert([
     {
       jumlah: order.jumlah_pesan,
+      total_harga: order.jumlah_pesan * harga, // 🔥 simpan uang FIX
       tanggal: new Date().toISOString(),
-      is_counted: true, // 🔥 WAJIB
+      is_counted: true,
     },
   ]);
 
@@ -136,9 +142,9 @@ app.get('/dashboard', async (req, res) => {
   // =========================
   // 💰 UANG (BISA DIRESET)
   // =========================
-  const { data: penjualanAktif } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
+  const { data: penjualanAktif } = await supabase.from('penjualan').select('total_harga').eq('is_counted', true);
 
-  const totalUang = penjualanAktif?.reduce((s, p) => s + p.jumlah, 0) || 0;
+  const totalUang = penjualanAktif?.reduce((s, p) => s + p.total_harga, 0) || 0;
 
   const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
 
@@ -148,10 +154,10 @@ app.get('/dashboard', async (req, res) => {
   // 🚀 FINAL RESPONSE
   // =========================
   res.send({
-    stok: stokAsli - totalKeluar, // 🔥 FIX FINAL
+    stok: stokAsli - totalKeluar,
     pendingKg,
     pending,
-    uang: totalUang * harga,
+    uang: totalUang, // 🔥 FIX
   });
 });
 
