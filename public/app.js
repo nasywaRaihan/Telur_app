@@ -68,9 +68,16 @@ async function tambahProduksi() {
 
 // BAYAR
 async function bayar(id) {
-  await fetch(`${API}/orders/${id}/bayar`, {
+  const res = await fetch(`${API}/orders/${id}/bayar`, {
     method: 'PATCH',
   });
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    alert(result.error); // 🔥 tampilkan error stok
+    return;
+  }
 
   init();
 }

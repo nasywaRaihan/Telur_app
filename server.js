@@ -60,27 +60,63 @@ app.get('/orders', async (req, res) => {
 app.patch('/orders/:id/bayar', async (req, res) => {
   const { id } = req.params;
 
+  // =========================
+  // 📦 AMBIL ORDER
+  // =========================
   const { data: order, error: err1 } = await supabase.from('orders').select('*').eq('id', id).single();
 
   if (err1 || !order) {
     return res.status(404).send({ error: 'Order tidak ditemukan' });
   }
 
-  // ambil harga dulu
+  // =========================
+  // 🥚 HITUNG STOK SAAT INI
+  // =========================
+
+  // produksi
+  const { data: produksi } = await supabase.from('produksi').select('jumlah_telur');
+
+  const stokAsli = produksi?.reduce((s, p) => s + p.jumlah_telur, 0) || 0;
+
+  // penjualan
+  const { data: penjualan } = await supabase.from('penjualan').select('jumlah');
+
+  const totalKeluar = penjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
+
+  const stokTersedia = stokAsli - totalKeluar;
+
+  // =========================
+  // ❌ VALIDASI STOK
+  // =========================
+  if (order.jumlah_pesan > stokTersedia) {
+    return res.status(400).send({
+      error: `Stok tidak cukup! Sisa stok: ${stokTersedia} kg`,
+    });
+  }
+
+  // =========================
+  // 💰 AMBIL HARGA
+  // =========================
   const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
 
   const harga = hargaRow?.harga_per_kg || 0;
 
+  // =========================
+  // 💸 SIMPAN PENJUALAN
+  // =========================
   await supabase.from('penjualan').insert([
     {
       jumlah: order.jumlah_pesan,
-      total_harga: order.jumlah_pesan * harga, // 🔥 simpan uang FIX
+      total_harga: order.jumlah_pesan * harga,
       tanggal: new Date().toISOString(),
       is_counted: true,
     },
   ]);
 
-  const { error } = await supabase
+  // =========================
+  // ✅ UPDATE ORDER
+  // =========================
+  await supabase
     .from('orders')
     .update({
       status_bayar: 'lunas',
@@ -89,9 +125,7 @@ app.patch('/orders/:id/bayar', async (req, res) => {
     })
     .eq('id', id);
 
-  if (error) return res.status(500).send(error);
-
-  res.send({ message: 'Sudah dibayar' });
+  res.send({ message: 'Berhasil diproses' });
 });
 
 // ===============================
