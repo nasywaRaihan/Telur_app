@@ -1,5 +1,9 @@
 const API = 'https://telurapp-production.up.railway.app';
 
+let prevStok = 0;
+let prevUang = 0;
+let prevPending = 0;
+
 let HARGA_GLOBAL = 0;
 let SEMUA_ORDERS = [];
 
@@ -112,13 +116,23 @@ async function loadDashboard() {
   const res = await fetch(`${API}/dashboard`);
   const data = await res.json();
 
-  document.getElementById('stok').innerText = (data.stok || 0) + ' kg';
-
   document.getElementById('stokInfo').innerText = '(pending: ' + (data.pendingKg || 0) + ' kg)';
 
-  document.getElementById('uang').innerText = formatRupiah(data.uang || 0);
+  const stokEl = document.getElementById('stok');
+  const uangEl = document.getElementById('uang');
+  const pendingEl = document.getElementById('pending');
 
-  document.getElementById('pending').innerText = data.pending || 0;
+  // 🔥 STOK
+  animateNumber(stokEl, prevStok, data.stok || 0, 500, false, ' kg');
+  prevStok = data.stok || 0;
+
+  // 🔥 UANG
+  animateNumber(uangEl, prevUang, data.uang || 0, 600, true);
+  prevUang = data.uang || 0;
+
+  // 🔥 PENDING
+  animateNumber(pendingEl, prevPending, data.pending || 0, 400);
+  prevPending = data.pending || 0;
 }
 
 // HARGA
@@ -379,6 +393,32 @@ function setLoading(button, isLoading, text = 'Loading...') {
     button.disabled = false;
     button.style.opacity = '1';
   }
+}
+
+// ANIMATE NUMBER
+function animateNumber(el, start, end, duration = 500, isCurrency = false, suffix = '') {
+  let startTime = null;
+
+  function format(value) {
+    if (isCurrency) {
+      return 'Rp ' + value.toLocaleString('id-ID');
+    }
+    return value + suffix;
+  }
+
+  function step(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const progress = Math.min((timestamp - startTime) / duration, 1);
+
+    const current = Math.floor(start + (end - start) * progress);
+    el.innerText = format(current);
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  requestAnimationFrame(step);
 }
 
 // INIT JALAN

@@ -19,10 +19,11 @@
 
       /* TITLE */
       h1 {
-        color: #ffd700;
+        color: #333;
         text-align: center;
         margin-bottom: 25px;
         letter-spacing: 1px;
+        text-transform: uppercase;
       }
 
       /* CONTAINER */
@@ -40,7 +41,22 @@
       }
 
       .dashboard {
-        grid-template-columns: repeat(3, 1fr);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .dashboard .card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .dashboard .card-info {
+        min-height: 120px;
+      }
+
+      .dashboard .card-info p {
+        margin-top: 5px;
       }
 
       /* CARD */
@@ -59,8 +75,8 @@
 
       /* INFO CARD (dashboard) */
       .card-info {
-        background: linear-gradient(135deg, #fff7cc, #fff1a8);
-        border: 1px solid #ffe066;
+        background: #ffe066;
+        color: #fff;
       }
 
       .card-input-info {
@@ -74,8 +90,14 @@
         border: 1px solid #e0e0e0;
       }
 
+      .card-info h2 {
+        color: #333;
+        font-weight: 700;
+      }
+
       .card-info h3 {
-        color: #b8860b;
+        color: #333;
+        font-weight: 600;
       }
 
       .card-input h3 {
@@ -83,7 +105,7 @@
       }
 
       .card-input-info h3 {
-        color: #ffffff;
+        color: #333;
       }
 
       /* INPUT */
@@ -138,6 +160,14 @@
 
       button:active {
         transform: scale(0.95);
+      }
+
+      button[onclick*='resetUang'] {
+        transition: 0.2s;
+      }
+
+      button[onclick*='resetUang']:hover {
+        background: #f5f5f5;
       }
 
       /* LIST */
@@ -534,13 +564,6 @@
           font-size: 14px;
         }
 
-        /* GRID DASHBOARD RESET */
-        .dashboard {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-        }
-
         /* URUTAN */
         .dashboard .card:nth-child(1) {
           order: 1; /* STOK */
@@ -619,7 +642,7 @@
     <div class="container">
       <div class="card card-info">
         <h3>💰 Harga Telur</h3>
-        <p id="hargaDisplay">Memuat harga...</p>
+        <p id="hargaDisplay" style="color: #333; font-weight: bold">Memuat harga...</p>
       </div>
     </div>
 
@@ -635,7 +658,7 @@
         <div class="card card-info">
           <div style="display: flex; justify-content: space-between; align-items: center">
             <h3>💰 Jumlah Uang</h3>
-            <button onclick="resetUang(this)" style="width: auto; padding: 5px 10px; font-size: 12px; background: #f44336">Reset</button>
+            <button onclick="resetUang(this)" style="width: auto; padding: 5px 10px; font-size: 12px; background: #fc1e05; color: #fff; border: 1px solid #fff">Reset</button>
           </div>
 
           <!-- 🔥 INI YANG KURANG -->
@@ -645,6 +668,7 @@
         <div class="card card-info">
           <h3>📦 Pending</h3>
           <h2 id="pending" style="font-size: 28px">0</h2>
+          <p id="pendingInfo" style="font-size: 14px; color: #ff6b6b">pesanan</p>
         </div>
       </div>
     </div>
