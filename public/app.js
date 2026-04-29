@@ -231,13 +231,14 @@ async function hapusOrder(id) {
 
 // RESET UANG
 async function resetUang() {
-  const yakin = confirm('Reset semua uang hari ini?');
-
+  const yakin = confirm('Reset uang hari ini?');
   if (!yakin) return;
 
   await fetch(`${API}/penjualan/reset`, {
-    method: 'DELETE',
+    method: 'PATCH',
   });
+
+  alert('Uang berhasil direset');
 
   init();
 }

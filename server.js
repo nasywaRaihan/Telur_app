@@ -110,10 +110,16 @@ app.post('/produksi', async (req, res) => {
 // ===============================
 app.get('/dashboard', async (req, res) => {
   const { data: produksi } = await supabase.from('produksi').select('jumlah_telur');
+
   const stokAsli = produksi?.reduce((s, p) => s + p.jumlah_telur, 0) || 0;
 
-  const { data: penjualan } = await supabase.from('penjualan').select('jumlah');
+  const { data: penjualan } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
+
   const terjual = penjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
+
+  const terjual = penjualan?.filter((p) => !p.is_reset).reduce((s, p) => s + p.jumlah, 0) || 0;
+
+  const uang = penjualan?.filter((p) => !p.is_reset).reduce((s, p) => s + p.jumlah, 0) * harga || 0;
 
   const { data: orders } = await supabase.from('orders').select('jumlah_pesan, status_order');
 
@@ -125,10 +131,12 @@ app.get('/dashboard', async (req, res) => {
 
   const pending = orders?.filter((o) => o.status_order === 'menunggu').length || 0;
 
+  const penjualan = data || [];
+
   res.send({
     stok: stokAsli - terjual,
-    pendingKg, // 🔴 kg (buat tulisan merah)
-    pending, // 🟡 jumlah orang (buat card)
+    pendingKg,
+    pending,
     uang: terjual * harga,
   });
 });
@@ -169,12 +177,12 @@ app.patch('/orders/:id', async (req, res) => {
   res.send({ message: 'Order diupdate' });
 });
 
-app.delete('/penjualan/reset', async (req, res) => {
-  const { error } = await supabase.from('penjualan').delete().neq('id', 0);
+app.patch('/penjualan/reset', async (req, res) => {
+  const { error } = await supabase.from('penjualan').update({ is_counted: false }).eq('is_counted', true);
 
   if (error) return res.status(500).send(error);
 
-  res.send({ message: 'Reset berhasil' });
+  res.send({ message: 'Uang direset' });
 });
 
 // ===============================
