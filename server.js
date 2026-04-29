@@ -110,36 +110,48 @@ app.post('/produksi', async (req, res) => {
 // DASHBOARD
 // ===============================
 app.get('/dashboard', async (req, res) => {
-  // PRODUKSI
+  // =========================
+  // 🥚 PRODUKSI (STOK MASUK)
+  // =========================
   const { data: produksi } = await supabase.from('produksi').select('jumlah_telur');
 
   const stokAsli = produksi?.reduce((s, p) => s + p.jumlah_telur, 0) || 0;
 
-  // ORDERS
+  // =========================
+  // 💸 PENJUALAN (STOK KELUAR)
+  // =========================
+  const { data: semuaPenjualan } = await supabase.from('penjualan').select('jumlah');
+
+  const totalKeluar = semuaPenjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
+
+  // =========================
+  // 📦 ORDERS (HANYA UNTUK UI)
+  // =========================
   const { data: orders } = await supabase.from('orders').select('jumlah_pesan, status_order');
 
-  // 🔥 SUDAH SELESAI → KURANGI STOK
-  const selesaiKg = orders?.filter((o) => o.status_order === 'selesai').reduce((s, o) => s + o.jumlah_pesan, 0) || 0;
-
-  // 🔥 PENDING
   const pendingKg = orders?.filter((o) => o.status_order !== 'selesai').reduce((s, o) => s + o.jumlah_pesan, 0) || 0;
 
   const pending = orders?.filter((o) => o.status_order === 'menunggu').length || 0;
 
-  // 🔥 UANG (dari penjualan)
-  const { data: penjualan } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
+  // =========================
+  // 💰 UANG (BISA DIRESET)
+  // =========================
+  const { data: penjualanAktif } = await supabase.from('penjualan').select('jumlah').eq('is_counted', true);
 
-  const totalTerjual = penjualan?.reduce((s, p) => s + p.jumlah, 0) || 0;
+  const totalUang = penjualanAktif?.reduce((s, p) => s + p.jumlah, 0) || 0;
 
   const { data: hargaRow } = await supabase.from('settings').select('harga_per_kg').eq('id', 1).single();
 
   const harga = hargaRow?.harga_per_kg || 0;
 
+  // =========================
+  // 🚀 FINAL RESPONSE
+  // =========================
   res.send({
-    stok: stokAsli - selesaiKg, // 🔥 FIX DI SINI
+    stok: stokAsli - totalKeluar, // 🔥 FIX FINAL
     pendingKg,
     pending,
-    uang: totalTerjual * harga,
+    uang: totalUang * harga,
   });
 });
 
