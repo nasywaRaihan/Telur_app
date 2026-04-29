@@ -359,6 +359,14 @@
         color: white;
       }
 
+      #edit-input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+      }
+
       /* ANIMATION */
       @keyframes slideIn {
         to {
@@ -486,6 +494,19 @@
         <div class="confirm-actions">
           <button onclick="handleConfirm(true)">Ya</button>
           <button onclick="handleConfirm(false)">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="edit-modal" class="confirm-overlay hidden">
+      <div class="confirm-box">
+        <p>Edit jumlah (kg)</p>
+
+        <input id="edit-input" type="number" placeholder="Masukkan jumlah" />
+
+        <div class="confirm-actions">
+          <button onclick="handleEdit(true)">Simpan</button>
+          <button onclick="handleEdit(false)">Batal</button>
         </div>
       </div>
     </div>

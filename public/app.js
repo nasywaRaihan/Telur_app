@@ -218,48 +218,46 @@ async function updateHarga() {
 
 // EDIT ORDER
 async function editOrder(id, jumlahLama) {
-  const jumlahBaru = prompt('Edit jumlah (kg):', jumlahLama);
+  showEditModal(jumlahLama, async (jumlahBaru) => {
+    if (!jumlahBaru) return;
 
-  if (!jumlahBaru) return;
+    await fetch(`${API}/orders/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jumlah: jumlahBaru }),
+    });
 
-  await fetch(`${API}/orders/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jumlah: jumlahBaru }),
+    showToast('Data berhasil diupdate');
+    init();
   });
-
-  showToast('Data berhasil diupdate');
-
-  init();
 }
 
 // HAPUS ORDER
 async function hapusOrder(id) {
-  showConfirm('Yakin mau hapus?', async (result) => {
-    if (!result) return;
+  showConfirm('Yakin mau hapus?', async (ok) => {
+    if (!ok) return;
 
     await fetch(`${API}/orders/${id}`, {
       method: 'DELETE',
     });
+
+    showToast('Pesanan berhasil dihapus');
+    init();
   });
-
-  showToast('Pesanan berhasil dihapus');
-
-  init();
 }
 
 // RESET UANG
 async function resetUang() {
-  const yakin = showConfirm('Reset uang hari ini?');
-  if (!yakin) return;
+  showConfirm('Reset uang hari ini?', async (ok) => {
+    if (!ok) return;
 
-  await fetch(`${API}/penjualan/reset`, {
-    method: 'PATCH',
+    await fetch(`${API}/penjualan/reset`, {
+      method: 'PATCH',
+    });
+
+    showToast('Uang berhasil direset');
+    init();
   });
-
-  showToast('Uang berhasil direset');
-
-  init();
 }
 
 // TOAST
@@ -305,6 +303,49 @@ function handleConfirm(result) {
     confirmCallback = null;
   }
 }
+
+let editCallback = null;
+
+function showEditModal(jumlahLama, callback) {
+  document.getElementById('edit-input').value = jumlahLama;
+  document.getElementById('edit-modal').classList.remove('hidden');
+  editCallback = callback;
+}
+
+function handleEdit(ok) {
+  const modal = document.getElementById('edit-modal');
+  modal.classList.add('hidden');
+
+  if (!ok) return;
+
+  const value = document.getElementById('edit-input').value;
+
+  if (editCallback) {
+    editCallback(value);
+    editCallback = null;
+  }
+}
+
+// 🔥 CLOSE MODAL kalau klik luar
+document.getElementById('confirm-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'confirm-modal') {
+    handleConfirm(false);
+  }
+});
+
+// 🔥 ESC untuk cancel
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    handleConfirm(false);
+  }
+});
+
+// klik luar untuk close edit
+document.getElementById('edit-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'edit-modal') {
+    handleEdit(false);
+  }
+});
 
 // INIT JALAN
 init();
